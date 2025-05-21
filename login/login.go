@@ -3,15 +3,10 @@ package login
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"log"
 	"errors"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
-	"github.com/tanaka00005/plantalk_back_go/login/token"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -22,30 +17,7 @@ type User struct {
 	ID	uint	`json:"id" gorm:"primaryKey;autoIncrement"`
 }
 
-func Login(){
-
-	// err := godotenv.Load()
-	// if err != nil {
-	//   log.Fatal("Error loading .env file")
-	// }
-	
-	// dbUer := os.Getenv("DB_USERNAME")
-	// dbPort := os.Getenv("DB_PORT")
-	// dbScheema := os.Getenv("DB_SCHEEMA")
-	// dbPassword := os.Getenv("DB_PASSWORD")
-
-	
-	// dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",dbUer,dbPassword,dbPort,dbScheema)
-	// //dsn := "root:password@tcp(127.0.0.1:53306)/plantalk_go?charset=utf8mb4&parseTime=True&loc=Local"
-
-	// db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-    // if err != nil {
-	// 	panic("failed to connect database")
-	// }
-	// //テーブルのマイグレーション
-	// db.AutoMigrate(&User{})
-	
-	r := gin.Default()
+func Login(r *gin.Engine, db *gorm.DB){
 
 	solt := "1234567890"
 	
@@ -69,7 +41,7 @@ func Login(){
 
 		user.Password = hash
 
-		accessToken,err := token.Token()
+		accessToken,err := Token()
 
 		result := db.Create(&user)
 
@@ -119,7 +91,7 @@ func Login(){
 			fmt.Println("不一致")
 		}
 
-		accessToken,err := token.Token()
+		accessToken,err := Token()
 
 		if result.Error != nil {
 			panic("failed to insert record")

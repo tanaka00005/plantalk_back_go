@@ -9,7 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"github.com/tanaka00005/plantalk_back_go/login/login.go"
+	"github.com/tanaka00005/plantalk_back_go/login"
 )
 
 type User struct {
@@ -50,7 +50,7 @@ func main(){
 		})
 	})
 
-	login.Login()
+	login.Login(r, db)
 	
 
 	r.Run(":8080")
