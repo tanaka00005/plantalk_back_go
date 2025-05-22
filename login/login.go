@@ -30,17 +30,37 @@ func Login(r *gin.Engine, db *gorm.DB){
 			return
 		}
 
+		// var dbUer User
+
+		// //userにdbから取ってきた一番最初の値を上書き
+		// result := db.First(&dbUer,"email = ?",user.Email)
+
+		var dbUer User
+
+		data := db.First(&dbUer,"email = ?",user.Email)
+
+		fmt.Printf("dbdata:%v",dbUer)
+
+		if(data.Error == nil){
+			c.JSON(http.StatusConflict,gin.H{"error":"このメールアドレスはすでに存在しています"})
+		}else if !errors.Is(data.Error, gorm.ErrRecordNotFound) {
+			// その他のDBエラー
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "サーバーエラー"})
+			return
+		}
+
 		// パスワードのハッシュ化
 		//soltはランダムな文字
 		hash,err := EncryptPassword(user.Password+solt)
 
 		if err != nil{
-			panic(err)
+			c.JSON(http.StatusInternalServerError,gin.H{"error":"サーバーエラー"})
+			return 
+		
 		}
 		fmt.Println(hash)
 
 		user.Password = hash
-
 		accessToken,err := Token()
 
 		result := db.Create(&user)
@@ -48,9 +68,11 @@ func Login(r *gin.Engine, db *gorm.DB){
 		if result.Error != nil {
 			panic("failed to insert record")
 		}
+		
 
 		if err != nil{
-			panic(err)
+			c.JSON(http.StatusInternalServerError,gin.H{"error":"サーバーエラー"})
+			return 
 		}
 
 		c.JSON(http.StatusOK,accessToken)
@@ -68,7 +90,6 @@ func Login(r *gin.Engine, db *gorm.DB){
 		fmt.Printf("first:%v",user)
 
 		var dbUer User
-
 
 		//userにdbから取ってきた一番最初の値を上書き
 		result := db.First(&dbUer,"email = ?",user.Email)
