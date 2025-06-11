@@ -39,7 +39,7 @@ func Login(r *gin.Engine, db *gorm.DB){
 
 		data := db.First(&dbUer,"email = ?",user.Email)
 
-		fmt.Printf("dbdata:%v",dbUer)
+		fmt.Printf("dbdata:%v",user)
 
 		if(data.Error == nil){
 			c.JSON(http.StatusConflict,gin.H{"error":"このメールアドレスはすでに存在しています"})
@@ -122,13 +122,15 @@ func Login(r *gin.Engine, db *gorm.DB){
 			panic(err)
 		}
 
+
+
 		c.JSON(http.StatusOK,accessToken)
 
 	})
-
 	r.Run(":8080")
 
 }
+
 
 func EncryptPassword(password string) (string,error){
 	hash,err := bcrypt.GenerateFromPassword([]byte(password),bcrypt.DefaultCost)
@@ -141,8 +143,6 @@ func CompareHashAndPassword(hash, password string) bool {
 
 	return err == nil
 }
-
-
 
 
 

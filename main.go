@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/tanaka00005/plantalk_back_go/check"
+	"github.com/tanaka00005/plantalk_back_go/login"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"github.com/tanaka00005/plantalk_back_go/login"
 )
 
 type User struct {
@@ -51,7 +52,7 @@ func main(){
 	})
 
 	login.Login(r, db)
-	
+	check.Check(r)
 
 	r.Run(":8080")
 
