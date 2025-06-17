@@ -50,10 +50,9 @@ func main(){
 			"message":"Hello world",
 		})
 	})
-
+	
 	login.Login(r, db)
 	check.Check(r)
-
 	r.Run(":8080")
 
 }

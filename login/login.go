@@ -1,9 +1,9 @@
 package login
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-	"errors"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -21,6 +21,12 @@ func Login(r *gin.Engine, db *gorm.DB){
 
 	solt := "1234567890"
 	
+	r.GET("/test",func (c *gin.Context)  {
+		c.JSON(200,gin.H{
+			"message":"Hello world",
+		})
+	})
+	
 
 	r.POST("/auth/register",func (c *gin.Context){
 		var user User
@@ -35,9 +41,12 @@ func Login(r *gin.Engine, db *gorm.DB){
 		// //userにdbから取ってきた一番最初の値を上書き
 		// result := db.First(&dbUer,"email = ?",user.Email)
 
-		var dbUer User
+		var dbUser User
+		fmt.Printf("user:%v\n",user)
+		fmt.Printf("dbuser:%v\n",dbUser)
 
-		data := db.First(&dbUer,"email = ?",user.Email)
+
+		data := db.First(&dbUser,"email = ?",user.Email)
 
 		fmt.Printf("dbdata:%v",user)
 
@@ -61,7 +70,7 @@ func Login(r *gin.Engine, db *gorm.DB){
 		fmt.Println(hash)
 
 		user.Password = hash
-		accessToken,err := Token()
+		accessToken,err := Token(user.Email)
 
 		result := db.Create(&user)
 
@@ -78,7 +87,7 @@ func Login(r *gin.Engine, db *gorm.DB){
 		c.JSON(http.StatusOK,accessToken)
 	})
 
-	r.POST("auth/login",func(c *gin.Context){
+	r.POST("/auth/login",func(c *gin.Context){
 		var user User
 
 		//userに取得してきた値を上書き
@@ -112,7 +121,8 @@ func Login(r *gin.Engine, db *gorm.DB){
 			fmt.Println("不一致")
 		}
 
-		accessToken,err := Token()
+
+		accessToken,err := Token(user.Email)
 
 		if result.Error != nil {
 			panic("failed to insert record")
@@ -122,12 +132,10 @@ func Login(r *gin.Engine, db *gorm.DB){
 			panic(err)
 		}
 
-
-
 		c.JSON(http.StatusOK,accessToken)
 
 	})
-	r.Run(":8080")
+
 
 }
 
