@@ -66,7 +66,6 @@ func Login(r *gin.Engine, db *gorm.DB){
 		if err != nil{
 			c.JSON(http.StatusInternalServerError,gin.H{"error":"サーバーエラー"})
 			return 
-		
 		}
 		fmt.Println(hash)
 
@@ -78,7 +77,6 @@ func Login(r *gin.Engine, db *gorm.DB){
 		if result.Error != nil {
 			panic("failed to insert record")
 		}
-		
 
 		if err != nil{
 			c.JSON(http.StatusInternalServerError,gin.H{"error":"サーバーエラー"})

@@ -1,4 +1,4 @@
-package check
+package middleware
 
 import (
 	"fmt"
@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Check(r *gin.Engine) {
+func JWTAuthMiddleware() gin.HandlerFunc {
 	
-	r.GET("/check/private",func(c *gin.Context){
+	return func(c *gin.Context){
 		tokenString := c.GetHeader("x-auth-token")
 		fmt.Printf("tokenString:%v\n",tokenString)
 
@@ -55,6 +55,11 @@ func Check(r *gin.Engine) {
 		fmt.Println("expの方が不正")
 	}
 
-		fmt.Printf("token:%v",tokenString)
-	})
+		fmt.Printf("token:%v\n",tokenString)
+		fmt.Printf("claims:%v\n",claims)
+
+		c.Set("user_email",userEmail)
+
+		c.Next()
+	}
 }

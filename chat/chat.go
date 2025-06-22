@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
+	"github.com/tanaka00005/plantalk_back_go/middleware"
 )
 
 type Question struct{
@@ -20,6 +21,7 @@ type Question struct{
 
 type Response struct{
 	Message string `json:"message"`
+	Email string `json:"email"`
 }
 
 func Chat(r *gin.Engine){
@@ -29,7 +31,14 @@ func Chat(r *gin.Engine){
 		})
 	})
 
-	r.POST("/chat/response",func (c *gin.Context) {
+	r.POST("/chat/response",middleware.JWTAuthMiddleware(), func (c *gin.Context) {
+
+		userEmail,exists := c.Get("user_email")
+
+		if !exists {
+			c.JSON(http.StatusInternalServerError,gin.H{"error":"ユーザー情報の取得に失敗しました"})
+			return 
+		}
 
 		var question Question
 
@@ -138,12 +147,15 @@ func Chat(r *gin.Engine){
 		aiResponse.Message = cleanText
 	}
 
+	aiResponse.Email = userEmail.(string)
 
 	fmt.Printf("prompt:%v\n",question.Question)
 	fmt.Printf("response:%v\n",response)
 	fmt.Printf("aiResponse:%v\n",aiResponse)
 
-	
+
+
+	c.JSON(http.StatusOK,aiResponse)
 	
 	})
 	
