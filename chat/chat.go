@@ -2,29 +2,42 @@ package chat
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
-	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/generative-ai-go/genai"
-	"google.golang.org/api/option"
 	"github.com/tanaka00005/plantalk_back_go/middleware"
+	"google.golang.org/api/option"
+	"gorm.io/gorm"
 )
 
 type Question struct{
 	Question string `json:"question" binding:"required"`
 }
 
-type Response struct{
-	Message string `json:"message"`
-	Email string `json:"email"`
+type User struct {
+	Email string `json:"email" binding:"required" gorm:"uniqueIndex;size:255"`
+	Name string `json:"name" binding:"required"`
+	Password string `json:"password" binding:"required"`
+	ID	uint	`json:"id" gorm:"primaryKey;autoIncrement"`
+	ChatLogs []ChatLog `json:"chat_logs" gorm:"foreignKey:UserID"`
 }
 
-func Chat(r *gin.Engine){
+type ChatLog struct{
+	Message string `json:"message"`
+	//Email string `json:"email"`
+	IsAi bool `json:"is_ai"`
+	UserID uint `json:"user_id" gorm:"not null"`
+	ID uint `json:"id" gorm:"primaryKey;autoIncrement"`
+}
+
+
+func Chat(r *gin.Engine, db *gorm.DB){
 	r.GET("/chat/test",func (c *gin.Context)  {
 		c.JSON(200,gin.H{
 			"message":"Hello world",
@@ -48,6 +61,44 @@ func Chat(r *gin.Engine){
 		}
 
 		fmt.Printf("res:%v\n",question.Question)
+
+		var chatLog User
+		
+		fmt.Printf("userEmail:%v\n",userEmail)
+		result := db.Where("email = ?",userEmail).Find(&chatLog)
+
+		if result.Error != nil {
+    		c.JSON(http.StatusInternalServerError, gin.H{"error": "データベースのクエリ実行に失敗しました。"})
+    		return
+		}
+		//result := db.First(&dbUser,"email = ?",user.Email)
+
+		fmt.Printf("email info:%v\n",chatLog)
+
+		userID := chatLog.ID
+
+		//userEmailStr, ok := userEmail.(string)
+		// if !ok {
+    	// 	c.JSON(http.StatusInternalServerError,gin.H{"error":"ユーザーメールの型変換に失敗しました"})
+    	// 	return
+		// }
+
+		userMessageLog := ChatLog{
+			Message: question.Question,
+			IsAi: false, //user
+			UserID: userID,
+			//Email:userEmailStr,
+		}
+
+
+		fmt.Printf("userMessageLog:%v\n",userMessageLog)
+
+		resultMessageLog := db.Create(&userMessageLog)
+
+		if resultMessageLog.Error != nil{
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "データベースのクエリ実行に失敗しました。"})
+    		return
+		}
 
 		ctx := context.Background()
 
@@ -122,12 +173,12 @@ func Chat(r *gin.Engine){
 		}
 	}
 
-	fmt.Printf("responseText:%v",responseText)
+	fmt.Printf("responseText:%v\n",responseText)
 
 	
 
 	//jsonの開始と終了を見つけて摘出
-	var aiResponse Response
+	var aiResponse ChatLog
 
 	cleanTextFront := strings.ReplaceAll(responseText,"```json","")
 	cleanTextEnd := strings.ReplaceAll(cleanTextFront,"```","")
@@ -147,7 +198,7 @@ func Chat(r *gin.Engine){
 		aiResponse.Message = cleanText
 	}
 
-	aiResponse.Email = userEmail.(string)
+	//aiResponse.Email = userEmail.(string)
 
 	fmt.Printf("prompt:%v\n",question.Question)
 	fmt.Printf("response:%v\n",response)

@@ -46,11 +46,14 @@ func Login(r *gin.Engine, db *gorm.DB){
 		fmt.Printf("user:%v\n",user)
 		fmt.Printf("dbuser:%v\n",dbUser)
 
-
+		//dbUserは空
+		//user.Emailは入力したemail
+		//データベースからuser.Emailと同じemailを探して挿入
 		data := db.First(&dbUser,"email = ?",user.Email)
 
-		fmt.Printf("dbdata:%v",user)
+		fmt.Printf("dbdata:%v",dbUser)
 
+		//もしデータベースとuser.Emailに同じemailが見つかったら->エラーが起こらなかったら
 		if(data.Error == nil){
 			c.JSON(http.StatusConflict,gin.H{"error":"このメールアドレスはすでに存在しています"})
 		}else if !errors.Is(data.Error, gorm.ErrRecordNotFound) {
@@ -97,10 +100,12 @@ func Login(r *gin.Engine, db *gorm.DB){
 
 		fmt.Printf("first:%v",user)
 
-		var dbUer User
+		var dbUser User
 
 		//userにdbから取ってきた一番最初の値を上書き
-		result := db.First(&dbUer,"email = ?",user.Email)
+		result := db.First(&dbUser,"email = ?",user.Email)
+
+		fmt.Printf("dbUser:%v",dbUser)
 
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound,gin.H{"error":"User not found"})
@@ -108,11 +113,11 @@ func Login(r *gin.Engine, db *gorm.DB){
 		}
 
 		
-		if(user.Name != dbUer.Name){
+		if(user.Name != dbUser.Name){
 			c.JSON(http.StatusUnauthorized,gin.H{"message":"ユーザー名が一致しません"})
 		}
 		
-		compareResult := CompareHashAndPassword(dbUer.Password,user.Password+solt)
+		compareResult := CompareHashAndPassword(dbUser.Password,user.Password+solt)
 
 		if compareResult{
 			fmt.Println("一致")

@@ -18,6 +18,15 @@ type User struct {
 	Name string `json:"name" binding:"required"`
 	Password string `json:"password" binding:"required"`
 	ID	uint	`json:"id" gorm:"primaryKey;autoIncrement"`
+	ChatLogs []ChatLog `json:"chat_logs" gorm:"foreignKey:UserID"`
+}
+
+type ChatLog struct {
+	Message string `json:"message"`
+	//Email string `json:"email"`
+	IsAi bool `json:"is_ai"`
+	UserID uint `json:"user_id" gorm:"not null"`
+	ID uint `json:"id" gorm:"primaryKey;autoIncrement"`
 }
 
 func main(){
@@ -40,8 +49,13 @@ func main(){
     if err != nil {
 		panic("failed to connect database")
 	}
+
+	db.Migrator().DropTable(&ChatLog{})
+	db.Migrator().DropTable(&User{})
+
 	//テーブルのマイグレーション
 	db.AutoMigrate(&User{})
+	db.AutoMigrate(&ChatLog{})
 	
 	r := gin.Default()
 	
@@ -52,7 +66,7 @@ func main(){
 	})
 
 	login.Login(r, db)
-	chat.Chat(r)
+	chat.Chat(r,db)
 	r.Run(":8080")
 
 }
