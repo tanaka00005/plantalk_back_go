@@ -27,7 +27,6 @@ type User struct {
 	ID	uint	`json:"id" gorm:"primaryKey;autoIncrement"`
 	ChatLogs []ChatLog `json:"chat_logs" gorm:"foreignKey:UserID"`
 }
-
 type ChatLog struct{
 	Message string `json:"message"`
 	//Email string `json:"email"`
@@ -35,7 +34,6 @@ type ChatLog struct{
 	UserID uint `json:"user_id" gorm:"not null"`
 	ID uint `json:"id" gorm:"primaryKey;autoIncrement"`
 }
-
 
 func Chat(r *gin.Engine, db *gorm.DB){
 	r.GET("/chat/test",func (c *gin.Context)  {
@@ -89,8 +87,6 @@ func Chat(r *gin.Engine, db *gorm.DB){
 			UserID: userID,
 			//Email:userEmailStr,
 		}
-
-
 		fmt.Printf("userMessageLog:%v\n",userMessageLog)
 
 		resultMessageLog := db.Create(&userMessageLog)

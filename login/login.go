@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	
 )
 
 type User struct {
@@ -16,7 +17,35 @@ type User struct {
 	Name string `json:"name" binding:"required"`
 	Password string `json:"password" binding:"required"`
 	ID	uint	`json:"id" gorm:"primaryKey;autoIncrement"`
+	Plant []Plant `json:"plant" gorm:"foreignKey:UserID"`
 }
+
+type Plant struct {
+	ID uint `json:"id" gorm:"primaryKey;autoIncrement"`
+	Species string `json:"species" binding:"required"`
+	SpeciesName string `json:"speciesname" binding:"required"`
+	UserID uint `json:"user_id" gorm:"not null"`
+	Diaries []Diary `json:"diaries" gorm:"foreignKey:PlantID"`
+}
+
+type Diary struct {
+	ID          uint      `gorm:"primaryKey"`
+	PlantID     uint      `json:"plant_id" gorm:"not null"`     
+	UserID      uint      `json:"user_id" gorm:"not null"`       
+	Content     string    `json:"content"`                       
+	HealthState int       `json:"health_state"`               
+	GrowthState int       `json:"growth_state"`                  
+	RecordedAt  time.Time `json:"recorded_at" gorm:"type:timestamp; default:CURRENT_TIMESTAMP"` 
+}
+
+type ChatLog struct {
+	ID         uint      `gorm:"primaryKey"`
+	UserID     uint      `json:"user_id" gorm:"not null"` 
+	Message    string    `json:"message"`                 
+	Sender     string    `json:"sender"`                  
+	RecordedAt time.Time `json:"recorded_at" gorm:"type:timestamp; default:CURRENT_TIMESTAMP"`
+}
+
 
 func Login(r *gin.Engine, db *gorm.DB){
 
@@ -73,6 +102,8 @@ func Login(r *gin.Engine, db *gorm.DB){
 		fmt.Println(hash)
 
 		user.Password = hash
+
+
 		accessToken,err := Token(user.Email)
 
 		result := db.Create(&user)
