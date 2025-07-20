@@ -14,6 +14,18 @@ import (
 	"gorm.io/gorm"
 	"github.com/gin-contrib/cors"
 )
+type Question struct{
+	Question string `json:"question" binding:"required"`
+}
+
+
+type ChatLog struct{
+	Message string `json:"message"`
+	//Email string `json:"email"`
+	IsAi bool `json:"is_ai"`
+	UserID uint `json:"user_id" gorm:"not null"`
+	ID uint `json:"id" gorm:"primaryKey;autoIncrement"`
+}
 
 type User struct {
 	Email string `json:"email" binding:"required" gorm:"uniqueIndex;size:255"`
@@ -41,13 +53,6 @@ type Diary struct {
 	RecordedAt  time.Time `json:"recorded_at" gorm:"type:timestamp; default:CURRENT_TIMESTAMP"` 
 }
 
-type ChatLog struct {
-	ID         uint      `gorm:"primaryKey"`
-	UserID     uint      `json:"user_id" gorm:"not null"` 
-	Message    string    `json:"message"`                 
-	Sender     string    `json:"sender"`                  
-	RecordedAt time.Time `json:"recorded_at" gorm:"type:timestamp; default:CURRENT_TIMESTAMP"`
-}
 
 func main(){
 
@@ -109,8 +114,10 @@ func main(){
 	config.AllowOriginFunc = func(origin string) bool {
         return origin == "http://localhost:5173"
     }
-	// config.AllowCredentials = true
-    // config.AddAllowHeaders("Authorization")
+
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "x-auth-token"}
+    config.AllowCredentials = true
+	
 	r.Use(cors.New(config))
 
 	login.Login(r, db)

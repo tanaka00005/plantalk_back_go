@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Goアプリケーションのサービス
@@ -9,6 +9,9 @@ services:
       - "8080:8080" # 左側(8080)はPC側のポート、右側はコンテナ内のGoアプリが使うポート
     env_file:
       - ./.env
+    # PCのカレントディレクトリ(.)をコンテナの/appにマウントする
+    volumes:
+      - .:/app
     depends_on:
       - db # dbサービスが起動してからappを起動する
 
@@ -19,10 +22,10 @@ services:
     restart: always
     environment:
       # ここでの設定で、データベースとユーザーが自動的に作成されます
-      MYSQL_ROOT_PASSWORD:  ${DB_PASSWORD} # rootのパスワード
-      MYSQL_DATABASE: ${DB_SCHEEMA}                     # 作成するデータベース名
-      MYSQL_USER: ${DB_USERNAME}                        # 作成するユーザー名
-      MYSQL_PASSWORD: ${DB_PASSWORD}                 # 作成するユーザーのパスワード
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD} # rootのパスワード
+      MYSQL_DATABASE: ${DB_SCHEEMA} # 作成するデータベース名
+      MYSQL_USER: ${DB_USERNAME} # 作成するユーザー名
+      MYSQL_PASSWORD: ${DB_PASSWORD} # 作成するユーザーのパスワード
     ports:
       - "53306:3306" # PCの53306番ポートをコンテナの3306番に繋ぐ
     volumes:

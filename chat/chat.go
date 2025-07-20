@@ -75,12 +75,6 @@ func Chat(r *gin.Engine, db *gorm.DB){
 
 		userID := chatLog.ID
 
-		//userEmailStr, ok := userEmail.(string)
-		// if !ok {
-    	// 	c.JSON(http.StatusInternalServerError,gin.H{"error":"ユーザーメールの型変換に失敗しました"})
-    	// 	return
-		// }
-
 		userMessageLog := ChatLog{
 			Message: question.Question,
 			IsAi: false, //user
@@ -169,41 +163,69 @@ func Chat(r *gin.Engine, db *gorm.DB){
 		}
 	}
 
-	fmt.Printf("responseText:%v\n",responseText)
-
-	
-
-	//jsonの開始と終了を見つけて摘出
 	var aiResponse ChatLog
 
 	cleanTextFront := strings.ReplaceAll(responseText,"```json","")
 	cleanTextEnd := strings.ReplaceAll(cleanTextFront,"```","")
 	cleanText := strings.TrimSpace(cleanTextEnd)
 	
-	// JSONとして解析を試行
-
-	//[]byte(cleanText)でcleanTextをバイトの配列に
-	//&aiResponseでresponseにmessageのメモリアドレスを取得
-	//unmarshlでjsonパーサーがバイト配列を解析
-	//"message"キーを発見
-	//cleanTextの値を取得
-	//aiResponse.MessageフィールドにcleanTextの値を代入
 	if err := json.Unmarshal([]byte(cleanText), &aiResponse); err != nil {
 		fmt.Printf("JSONパースエラー: %v\n", err)
 		// パースに失敗した場合は生のテキストを使用
 		aiResponse.Message = cleanText
 	}
 
-	//aiResponse.Email = userEmail.(string)
+	aiResponseLog := ChatLog{
+			Message: aiResponse.Message,
+			IsAi: true, //ai
+			UserID: userID,
+			//Email:userEmailStr,
+		}
+		fmt.Printf("aiResponse:%v\n",aiResponseLog)
 
-	fmt.Printf("prompt:%v\n",question.Question)
-	fmt.Printf("response:%v\n",response)
-	fmt.Printf("aiResponse:%v\n",aiResponse)
+		resultAiResponse := db.Create(&aiResponseLog)
 
+		if resultAiResponse.Error != nil{
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "データベースのクエリ実行に失敗しました。"})
+    		return
+		}
 
-
-	c.JSON(http.StatusOK,aiResponse)
+	c.JSON(http.StatusOK,aiResponseLog)
 	
+	})
+
+	r.GET("/chat/history",middleware.JWTAuthMiddleware(),func (c *gin.Context)  {
+		userEmail,exists := c.Get("user_email")
+
+		if !exists {
+			c.JSON(http.StatusInternalServerError,gin.H{"error":"ユーザー情報の取得に失敗しました"})
+			return 
+		}
+
+		fmt.Printf("userEmainnmml:%v\n",userEmail)
+
+		var getUserID User
+
+		result := db.Where("email = ?",userEmail).First(&getUserID)
+
+		if result.Error != nil {
+    		c.JSON(http.StatusInternalServerError, gin.H{"error": "データベースのクエリ実行に失敗しました。"})
+    		return
+		}
+
+		fmt.Printf("getUserID:%v\n",getUserID)
+
+		var ChatLogMessage []ChatLog
+
+		resultMessage := db.Where("user_id = ?",getUserID.ID).Find(&ChatLogMessage)
+
+		if resultMessage.Error != nil {
+    		c.JSON(http.StatusInternalServerError, gin.H{"error": "データベースのクエリ実行に失敗しました。"})
+    		return
+		}
+
+			c.JSON(http.StatusOK,ChatLogMessage)
+
 	})
 	
 }

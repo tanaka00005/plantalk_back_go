@@ -117,7 +117,7 @@ func Login(r *gin.Engine, db *gorm.DB){
 			return 
 		}
 
-		c.JSON(http.StatusOK,accessToken)
+		c.JSON(http.StatusOK,gin.H{"token":accessToken})
 	})
 
 	r.POST("/auth/login",func(c *gin.Context){
@@ -167,7 +167,7 @@ func Login(r *gin.Engine, db *gorm.DB){
 			panic(err)
 		}
 
-		c.JSON(http.StatusOK,accessToken)
+		c.JSON(http.StatusOK,gin.H{"token":accessToken})
 
 	})
 
