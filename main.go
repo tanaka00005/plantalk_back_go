@@ -2,17 +2,18 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
-	 "log"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/tanaka00005/plantalk_back_go/chat"
 	"github.com/tanaka00005/plantalk_back_go/login"
+	"github.com/tanaka00005/plantalk_back_go/calendar"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"github.com/gin-contrib/cors"
 )
 type Question struct{
 	Question string `json:"question" binding:"required"`
@@ -122,6 +123,7 @@ func main(){
 
 	login.Login(r, db)
 	chat.Chat(r,db)
+	calendar.Calendar(r,db)
 	r.Run(":8080")
 
 }
