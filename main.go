@@ -31,9 +31,9 @@ type ChatLog struct{
 type User struct {
 	Email string `json:"email" binding:"required" gorm:"uniqueIndex;size:255"`
 	Name string `json:"name" binding:"required"`
-	Password string `json:"password" binding:"required"`
 	ID	uint	`json:"id" gorm:"primaryKey;autoIncrement"`
-	Plant []Plant `json:"plant" gorm:"foreignKey:UserID"`
+	Diaries []Diary `json:"diaries" gorm:"foreignKey:UserID"`
+	Plants []Plant `json:"plant" gorm:"foreignKey:UserID"`
 }
 
 type Plant struct {
@@ -46,12 +46,12 @@ type Plant struct {
 
 type Diary struct {
 	ID          uint      `gorm:"primaryKey"`
-	PlantID     uint      `json:"plant_id" gorm:"not null"`     
+	PlantID     uint      `json:"plant_id" gorm:"not null"`    
 	UserID      uint      `json:"user_id" gorm:"not null"`       
 	Content     string    `json:"content"`                       
 	HealthState int       `json:"health_state"`               
 	GrowthState int       `json:"growth_state"`                  
-	RecordedAt  time.Time `json:"recorded_at" gorm:"type:timestamp; default:CURRENT_TIMESTAMP"` 
+	RecordedAt  time.Time `json:"recorded_at" gorm:"type:timestamp; default:CURRENT_TIMESTAMP"`
 }
 
 
