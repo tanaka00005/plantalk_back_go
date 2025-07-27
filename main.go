@@ -34,6 +34,7 @@ type User struct {
 	ID	uint	`json:"id" gorm:"primaryKey;autoIncrement"`
 	Diaries []Diary `json:"diaries" gorm:"foreignKey:UserID"`
 	Plants []Plant `json:"plant" gorm:"foreignKey:UserID"`
+	ChatLogs []ChatLog `json:"chat_logs" gorm:"foreignKey:UserID"`
 }
 
 type Plant struct {

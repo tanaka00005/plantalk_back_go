@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/generative-ai-go/genai"
@@ -26,6 +27,7 @@ type User struct {
 	Password string `json:"password" binding:"required"`
 	ID	uint	`json:"id" gorm:"primaryKey;autoIncrement"`
 	ChatLogs []ChatLog `json:"chat_logs" gorm:"foreignKey:UserID"`
+	Plants []Plant `json:"plant" gorm:"foreignKey:UserID"`
 }
 type ChatLog struct{
 	Message string `json:"message"`
@@ -34,6 +36,23 @@ type ChatLog struct{
 	UserID uint `json:"user_id" gorm:"not null"`
 	ID uint `json:"id" gorm:"primaryKey;autoIncrement"`
 }
+type Plant struct {
+	ID uint `json:"id" gorm:"primaryKey;autoIncrement"`
+	Species string `json:"species" binding:"required"`
+	SpeciesName string `json:"speciesname" binding:"required"`
+	UserID uint `json:"user_id" gorm:"not null"`
+	Diaries []Diary `json:"diaries" gorm:"foreignKey:PlantID"`
+}
+type Diary struct {
+	ID          uint      `gorm:"primaryKey"`
+	PlantID     uint      `json:"plant_id" gorm:"not null"`    
+	UserID      uint      `json:"user_id" gorm:"not null"`       
+	Content     string    `json:"content"`                       
+	HealthState int       `json:"health_state"`               
+	GrowthState int       `json:"growth_state"`                  
+	RecordedAt  time.Time `json:"recorded_at" gorm:"type:timestamp; default:CURRENT_TIMESTAMP"`
+}
+
 
 func Chat(r *gin.Engine, db *gorm.DB){
 	r.GET("/chat/test",func (c *gin.Context)  {
@@ -69,7 +88,16 @@ func Chat(r *gin.Engine, db *gorm.DB){
     		c.JSON(http.StatusInternalServerError, gin.H{"error": "データベースのクエリ実行に失敗しました。"})
     		return
 		}
-		//result := db.First(&dbUser,"email = ?",user.Email)
+
+		var getUserID User
+		result_plant := db.Preload("Plants").Where("email = ?",userEmail).First(&getUserID)
+
+		if result_plant.Error != nil {
+			// ユーザーが見つからない場合もエラーとして処理されます。
+			log.Printf("Database query error: %v", result.Error)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ユーザー情報の取得に失敗しました。"})
+			return
+		}
 
 		fmt.Printf("email info:%v\n",chatLog)
 
@@ -119,32 +147,21 @@ func Chat(r *gin.Engine, db *gorm.DB){
 		},
 	}
 
-	species := "ラディッシュ"
-	sunlight := 100
-	water := 100
-	temperature := 20
-	humidity := 50
-	character := "モスモス"
-
 	prompt := fmt.Sprintf(`
-		あなたは、植物の育成状況を評価する専門家%sです。%sとして植物の状態を1行でしゃべってください。
-		語尾に「モス」をつけてください。
+		あなたは、植物の育成状況を評価する専門家%sです。
+		
+		質問が来たら質問に簡潔に答えて。
 
-		植物の種類は%sです。
-		日光は%d。
-		水分は%d。
-		温度は%d。
-		湿度は%d。
 
 		質問は%s。
 
-		この質問に対して、モスモスとして適切に答えてください。植物に関する質問の場合は上記の情報も参考に考えてください。植物に関係ない質問でもモスモスとして答えてください。
+		この質問に対して、適切に答えてください。
 
 		では次のjson形式で返答してください。
 		{
 			"message":"質問に対する答えをここに書いてください"
 		}
-	`,character,character,species,sunlight,water,	temperature,humidity,question.Question)
+	`,getUserID.Plants[0].Species,question.Question)
 
 	//質問
 	response, err := cs.SendMessage(ctx,genai.Text(prompt+question.Question))
@@ -206,14 +223,12 @@ func Chat(r *gin.Engine, db *gorm.DB){
 
 		var getUserID User
 
-		result := db.Where("email = ?",userEmail).First(&getUserID)
+		result := db.Preload("Plants").Where("email = ?",userEmail).First(&getUserID)
 
 		if result.Error != nil {
     		c.JSON(http.StatusInternalServerError, gin.H{"error": "データベースのクエリ実行に失敗しました。"})
     		return
 		}
-
-		fmt.Printf("getUserID:%v\n",getUserID)
 
 		var ChatLogMessage []ChatLog
 
@@ -224,7 +239,10 @@ func Chat(r *gin.Engine, db *gorm.DB){
     		return
 		}
 
-			c.JSON(http.StatusOK,ChatLogMessage)
+		c.JSON(http.StatusOK, gin.H{
+    		"plant_species_name": getUserID.Plants[0].Species,
+   			"chat_logs":          ChatLogMessage,
+		})
 
 	})
 	
